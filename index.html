@@ -2,127 +2,247 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Legacy NLP Patterns Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scikit-Keras Text Processing Component Reference</title>
     <style>
+        :root {
+            --sklearn-orange: #f4aa20;
+            --sklearn-blue: #005083;
+            --sklearn-light-bg: #f8f9fa;
+            --sklearn-border: #eaecf0;
+            --text-dark: #333333;
+            --sidebar-width: 280px;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #ffffff;
-            color: #333333;
+            color: var(--text-dark);
             line-height: 1.6;
         }
-        #sidebar {
-            width: 250px;
+
+        /* Top Navigation Bar mimicking Scikit-learn */
+        #top-nav {
+            background-color: #ffffff;
+            border-bottom: 2px solid var(--sklearn-orange);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
             position: fixed;
             top: 0;
-            left: 0;
-            height: 100%;
-            background-color: #f4f4f4;
-            border-right: 1px solid #dddddd;
-            padding: 20px;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        #toggle-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 20px;
+            color: var(--sklearn-blue);
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--sklearn-blue);
+            letter-spacing: 0.5px;
+        }
+
+        /* Layout */
+        #main-container {
+            display: flex;
+            margin-top: 55px; /* Offset for top nav */
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sklearn-light-bg);
+            border-right: 1px solid var(--sklearn-border);
+            height: calc(100vh - 55px);
+            position: fixed;
             overflow-y: auto;
+            transition: transform 0.3s ease;
+            padding-top: 20px;
         }
-        #content {
-            margin-left: 290px;
-            padding: 20px;
-            max-width: 800px;
+
+        #sidebar.collapsed {
+            transform: translateX(-100%);
         }
-        h1, h2, h3 {
-            color: #003366;
-            border-bottom: 1px solid #cccccc;
-            padding-bottom: 5px;
+
+        #sidebar h3 {
+            padding-left: 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 10px;
         }
-        h4 {
-            color: #444444;
-            margin-bottom: 5px;
+
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
-        a {
-            color: #0066cc;
+
+        #sidebar li a {
+            display: block;
+            padding: 8px 20px;
+            color: var(--text-dark);
             text-decoration: none;
+            font-size: 14px;
         }
-        a:hover {
-            text-decoration: underline;
+
+        #sidebar li a:hover {
+            background-color: #e2e6ea;
+            color: var(--sklearn-blue);
         }
+
+        #content {
+            flex-grow: 1;
+            margin-left: var(--sidebar-width);
+            padding: 40px;
+            max-width: 900px;
+            transition: margin-left 0.3s ease;
+        }
+
+        #content.expanded {
+            margin-left: 0;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Content Typography & Components */
+        h1, h2, h3 {
+            color: var(--text-dark);
+            font-weight: 400;
+        }
+
+        h1 { font-size: 2.2em; border-bottom: 1px solid var(--sklearn-border); padding-bottom: 10px; }
+        h2 { font-size: 1.5em; margin-top: 40px; color: var(--sklearn-blue); }
+        
+        a { color: var(--sklearn-blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
         .code-container {
             position: relative;
-            background-color: #f8f8f8;
-            border: 1px solid #cccccc;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 3px;
+            background-color: var(--sklearn-light-bg);
+            border: 1px solid var(--sklearn-border);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 25px;
         }
+
         pre {
             margin: 0;
             overflow-x: auto;
-            font-family: "Courier New", Courier, monospace;
+            font-family: Consolas, "Courier New", monospace;
             font-size: 14px;
+            color: #24292e;
         }
+
         .copy-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: #e0e0e0;
-            border: 1px solid #999;
-            padding: 3px 8px;
+            top: 10px;
+            right: 10px;
+            background-color: #ffffff;
+            border: 1px solid #d1d5da;
+            border-radius: 3px;
+            padding: 4px 8px;
             cursor: pointer;
             font-size: 12px;
+            color: #444;
         }
-        .copy-btn:hover {
-            background-color: #cccccc;
+
+        .copy-btn:hover { background-color: #f3f4f6; }
+
+        .doc-text { color: #555555; margin-bottom: 15px; }
+
+        /* Accordion for Implementation Notes */
+        details {
+            background: #ffffff;
+            border: 1px solid var(--sklearn-border);
+            border-radius: 4px;
+            margin-bottom: 10px;
         }
-        .doc-text {
-            font-style: italic;
-            color: #555555;
-            margin-bottom: 15px;
+
+        summary {
+            font-weight: 600;
+            padding: 12px 15px;
+            cursor: pointer;
+            background-color: var(--sklearn-light-bg);
+            border-bottom: 1px solid transparent;
         }
+        
+        details[open] summary {
+            border-bottom: 1px solid var(--sklearn-border);
+        }
+
         .implementation-list {
             list-style-type: none;
-            padding: 0;
+            padding: 15px;
+            margin: 0;
         }
+
         .implementation-list li {
-            background: #fafafa;
-            border-left: 4px solid #003366;
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
         }
+
+        .implementation-list li:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
         .ref-link {
-            font-family: "Courier New", Courier, monospace;
+            font-family: Consolas, "Courier New", monospace;
             font-size: 13px;
-            background: #eeeeee;
-            padding: 2px 4px;
+            background: #e8f4f8;
+            padding: 3px 6px;
+            border-radius: 3px;
             display: inline-block;
-            margin-top: 5px;
+            margin-top: 8px;
             word-break: break-all;
         }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <h3>Contents</h3>
-        <ul>
-            <li><a href="#setup">Core Utilities</a></li>
-            <li><a href="#vader">VADER Customization</a></li>
-            <li><a href="#bow-lda">BOW & LDA</a></li>
-            <li><a href="#dense-sentiment">Dense Sentiment Classifier</a></li>
-            <li><a href="#word2vec">Word2Vec Skip-Gram</a></li>
-            <li><a href="#cnn">CNN Classifier</a></li>
-            <li><a href="#ner">Bi-LSTM NER</a></li>
-            <li><a href="#seq2seq">Seq2Seq Attention</a></li>
-            <li><a href="#implementation-notes">Implementation Notes</a></li>
-        </ul>
+    <div id="top-nav">
+        <button id="toggle-btn" onclick="toggleSidebar()">☰</button>
+        <span class="brand">scikit-keras v1.4.2</span>
     </div>
 
-    <div id="content">
-        <h1>Legacy NLP Component Reference</h1>
-        <p>This documentation provides standardized, legacy implementations for various Natural Language Processing architectures using Keras and Scikit-Learn. These patterns are maintained for historical compatibility.</p>
+    <div id="main-container">
+        <div id="sidebar">
+            <h3>API Reference</h3>
+            <ul>
+                <li><a href="#setup">Preprocessing Utilities</a></li>
+                <li><a href="#vader">VADER Lexicon Builder</a></li>
+                <li><a href="#bow-lda">Feature Extraction (BOW/LDA)</a></li>
+                <li><a href="#dense-sentiment">Dense Sequence Classifier</a></li>
+                <li><a href="#word2vec">Word2Vec Skip-Gram</a></li>
+                <li><a href="#cnn">Conv1D Text Classifier</a></li>
+                <li><a href="#ner">Bi-LSTM Entity Tagger</a></li>
+                <li><a href="#seq2seq">Seq2Seq Attention Model</a></li>
+                <li><a href="#implementation-notes">Implementation Notes</a></li>
+            </ul>
+        </div>
 
-        <h2 id="setup">Core Preprocessing Utilities</h2>
-        <p class="doc-text">Standard tokenization and padding wrappers. Required for sequence models.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>import numpy as np
+        <div id="content">
+            <h1>Scikit-Keras Text Processing Component Reference</h1>
+            <p>This documentation provides standardized API implementations for hybrid text processing architectures using Keras and Scikit-Learn. These modules are optimized for pipeline integration.</p>
+
+            <h2 id="setup">Core Preprocessing Utilities</h2>
+            <p class="doc-text">Standard tokenization, stop-word removal, and dynamic sequence padding wrappers.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, Embedding, Dense, LSTM, Bidirectional, Conv1D, GlobalMaxPooling1D, GlobalAveragePooling1D, TimeDistributed, Dropout
@@ -148,13 +268,12 @@ def preprocess_text(texts, max_len, vocab_size=None, tokenizer=None):
     seqs = tokenizer.texts_to_sequences(cleaned)
     padded = pad_sequences(seqs, maxlen=max_len, padding='post', truncating='post')
     return padded, tokenizer</code></pre>
-        </div>
+            </div>
 
-        <h2 id="vader">Domain-Specific VADER Customization</h2>
-        <p class="doc-text">Extending the default VADER lexicon with custom weights for specific domains (e.g., electronics).</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>from nltk.sentiment.vader import SentimentIntensityAnalyzer
+            <h2 id="vader">Domain-Specific VADER Customization</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 def build_custom_vader():
     sia = SentimentIntensityAnalyzer()
@@ -167,13 +286,12 @@ def build_custom_vader():
     }
     sia.lexicon.update(custom_lexicon)
     return sia</code></pre>
-        </div>
+            </div>
 
-        <h2 id="bow-lda">Bag-of-Words and Topic Modeling Pipelines</h2>
-        <p class="doc-text">Scikit-learn pipelines for text vectorization and Latent Dirichlet Allocation.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+            <h2 id="bow-lda">Feature Extraction Pipelines (BOW & LDA)</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
@@ -190,13 +308,12 @@ def build_bow_lda_pipeline(num_topics=10):
         ('lda', LatentDirichletAllocation(n_components=num_topics, random_state=42)),
     ])
     return bow_clf, lda</code></pre>
-        </div>
+            </div>
 
-        <h2 id="dense-sentiment">Dense Sentiment Classifier</h2>
-        <p class="doc-text">A multi-class sequence classifier using Global Average Pooling over word embeddings.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>def build_dense_classifier(vocab_size, max_len, num_classes=3, embedding_dim=128):
+            <h2 id="dense-sentiment">Dense Sentiment Classifier</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>def build_dense_classifier(vocab_size, max_len, num_classes=3, embedding_dim=128):
     model = Sequential([
         Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_len),
         GlobalAveragePooling1D(),
@@ -206,13 +323,12 @@ def build_bow_lda_pipeline(num_topics=10):
     ])
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     return model</code></pre>
-        </div>
+            </div>
 
-        <h2 id="word2vec">Word2Vec Skip-Gram Architecture</h2>
-        <p class="doc-text">A barebones implementation of the Skip-gram target-context dot product using Keras Functional API.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>def build_word2vec_skipgram(vocab_size, embedding_dim=300):
+            <h2 id="word2vec">Word2Vec Skip-Gram Architecture</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>def build_word2vec_skipgram(vocab_size, embedding_dim=300):
     target_word = Input(shape=(1,))
     context_word = Input(shape=(1,))
 
@@ -227,13 +343,12 @@ def build_bow_lda_pipeline(num_topics=10):
     model = Model(inputs=[target_word, context_word], outputs=output)
     model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.025), loss='binary_crossentropy')
     return model</code></pre>
-        </div>
+            </div>
 
-        <h2 id="cnn">CNN Sequence Classifier</h2>
-        <p class="doc-text">1D Convolutional Neural Network optimized for binary text classification.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>def build_cnn_classifier(vocab_size, max_len, embedding_dim=100):
+            <h2 id="cnn">Conv1D Sequence Classifier</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>def build_cnn_classifier(vocab_size, max_len, embedding_dim=100):
     model = Sequential([
         Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_len),
         Conv1D(filters=128, kernel_size=3, activation='relu'),
@@ -244,13 +359,12 @@ def build_bow_lda_pipeline(num_topics=10):
     ])
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model</code></pre>
-        </div>
+            </div>
 
-        <h2 id="ner">Bidirectional LSTM for NER</h2>
-        <p class="doc-text">Token-level classification architecture utilizing a TimeDistributed dense layer.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>def build_ner_bilstm(vocab_size, max_len, num_entity_classes):
+            <h2 id="ner">Bidirectional LSTM for NER</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>def build_ner_bilstm(vocab_size, max_len, num_entity_classes):
     model = Sequential([
         Embedding(input_dim=vocab_size, output_dim=100, input_length=max_len),
         Bidirectional(LSTM(128, return_sequences=True)),
@@ -260,13 +374,12 @@ def build_bow_lda_pipeline(num_topics=10):
                   loss='sparse_categorical_crossentropy', 
                   metrics=['accuracy'])
     return model</code></pre>
-        </div>
+            </div>
 
-        <h2 id="seq2seq">Seq2Seq with Attention</h2>
-        <p class="doc-text">Encoder-Decoder architecture for abstractive summarization tasks.</p>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>def build_seq2seq_attention(vocab_size, max_len_in, max_len_out, latent_dim=300):
+            <h2 id="seq2seq">Seq2Seq with Attention</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <pre><code>def build_seq2seq_attention(vocab_size, max_len_in, max_len_out, latent_dim=300):
     # Encoder
     encoder_inputs = Input(shape=(max_len_in,))
     enc_emb = Embedding(vocab_size, 256)(encoder_inputs)
@@ -293,121 +406,146 @@ def build_bow_lda_pipeline(num_topics=10):
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy')
     return model</code></pre>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--sklearn-border); margin: 40px 0;">
+
+            <h2 id="implementation-notes">Implementation Notes</h2>
+            <p class="doc-text">Reference operational procedures, execution dependencies, and domain-specific problem constraints.</p>
+
+            <details>
+                <summary>Electronics Retailer Sentiment Analysis</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Process an electronics retailer's customer reviews dataset to determine overall sentiment, identify frequently mentioned product features, detect key entities (brands, models), and surface common complaints and praises.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Handle missing values in reviews.text and reviews.rating.<br>
+                    <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.dropna.html" target="_blank" class="ref-link">Ref: pandas.pydata.org/docs/reference/api/pandas.DataFrame.dropna.html</a></li>
+                    <li><strong>Task:</strong> Extract models from product names using regex patterns for number sequences or model codes.<br>
+                    <a href="https://docs.python.org/3/library/re.html" target="_blank" class="ref-link">Ref: docs.python.org/3/library/re.html</a></li>
+                    <li><strong>Task:</strong> Update the VADER lexicon with domain-specific electronics terminology like "responsive" or "glitchy".<br>
+                    <a href="https://stackoverflow.com/search?q=nltk+vader+update+lexicon+SentimentIntensityAnalyzer" target="_blank" class="ref-link">Ref: StackOverflow: nltk vader update lexicon SentimentIntensityAnalyzer</a></li>
+                    <li><strong>Task:</strong> Split review sentences on conjunctions like "but" or "however" to isolate aspect-based sentiments.<br>
+                    <a href="https://stackoverflow.com/search?q=python+regex+split+string+by+multiple+delimiters" target="_blank" class="ref-link">Ref: StackOverflow: python regex split string by multiple delimiters</a></li>
+                    <li><strong>Task:</strong> Compare VADER's calculated sentiment against the ground truth of the 1-5 star ratings.<br>
+                    <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html" target="_blank" class="ref-link">Ref: pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Newsgroups Text Representation Pipeline</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Develop a pipeline to preprocess 20 Newsgroups text data, generate Bag-of-Words (BOW) and Latent Dirichlet Allocation (LDA) feature representations, and evaluate their impact on classifier performance.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Clean the text data by lowercasing, removing stop words, and applying lemmatization.<br>
+                    <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#stop-words" target="_blank" class="ref-link">Ref: scikit-learn.org/stable/modules/feature_extraction.html#stop-words</a></li>
+                    <li><strong>Task:</strong> Generate the BOW representation using CountVectorizer limited to the top 1,000 most frequent terms, followed by TfidfTransformer.<br>
+                    <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html" target="_blank" class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html</a></li>
+                    <li><strong>Task:</strong> Train an LDA model on the training set to derive 10-dimensional topic probability distributions.<br>
+                    <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.LatentDirichletAllocation.html" target="_blank" class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.decomposition.LatentDirichletAllocation.html</a></li>
+                    <li><strong>Task:</strong> Train Logistic Regression and Naive Bayes classifiers using both the TF-IDF features and the LDA distributions.<br>
+                    <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html" target="_blank" class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html</a></li>
+                    <li><strong>Task:</strong> Evaluate both models using accuracy, F1-score, and a confusion matrix to compare the representations.<br>
+                    <a href="https://scikit-learn.org/stable/modules/model_evaluation.html" target="_blank" class="ref-link">Ref: scikit-learn.org/stable/modules/model_evaluation.html</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Product Review Sentiment Classification</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Design a word-embedding-based text classification system using the NLTK product_reviews_1 corpus to automatically predict review sentiment.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Assign numerical labels (0, 1, 2) to sentiment classes and convert them into one-hot encoded vectors.<br>
+                    <a href="https://keras.io/api/utils/python_utils/#to_categorical-function" target="_blank" class="ref-link">Ref: keras.io/api/utils/python_utils/#to_categorical-function</a></li>
+                    <li><strong>Task:</strong> Tokenize the text with a vocabulary size of 10,000, introduce an &lt;OOV&gt; token, and convert sentences to integer sequences.<br>
+                    <a href="https://keras.io/api/data_loading/text/" target="_blank" class="ref-link">Ref: keras.io/api/data_loading/text/</a></li>
+                    <li><strong>Task:</strong> Apply sequence padding to enforce a uniform length of 100 tokens across all inputs.<br>
+                    <a href="https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences" target="_blank" class="ref-link">Ref: tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences</a></li>
+                    <li><strong>Task:</strong> Construct a sequential model starting with a 128-dimensional Embedding layer, followed by a Global Average Pooling layer.<br>
+                    <a href="https://keras.io/api/layers/pooling_layers/global_average_pooling1d/" target="_blank" class="ref-link">Ref: keras.io/api/layers/pooling_layers/global_average_pooling1d/</a></li>
+                    <li><strong>Task:</strong> Add Dense layers with ReLU and Dropout, finishing with a Softmax output layer for the multi-class probabilities.<br>
+                    <a href="https://keras.io/api/layers/core_layers/dense/" target="_blank" class="ref-link">Ref: keras.io/api/layers/core_layers/dense/</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Word2Vec Skip-Gram Implementation</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Implement the Skip-Gram variant of the Word2Vec algorithm strictly from scratch using Stochastic Gradient Descent (SGD) to generate 300-dimensional embeddings from the Text8 corpus.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Preprocess the cleaned English text by implementing a subsampling function to discard frequent words exceeding a 1e-5 threshold.<br>
+                    <a href="https://docs.python.org/3/library/collections.html#collections.Counter" target="_blank" class="ref-link">Ref: docs.python.org/3/library/collections.html#collections.Counter</a></li>
+                    <li><strong>Task:</strong> Generate target-context word pairs using a dynamic context window size of ±5 words.<br>
+                    <a href="https://github.com/search?q=%22skip-gram%22+%22dynamic+window%22+numpy+language%3Apython&type=code" target="_blank" class="ref-link">Ref: GitHub: "skip-gram" "dynamic window" numpy</a></li>
+                    <li><strong>Task:</strong> Implement the negative sampling distribution to draw 5-20 negative samples per positive target pair efficiently.<br>
+                    <a href="https://github.com/search?q=%22negative+sampling%22+word2vec+numpy+from+scratch&type=code" target="_blank" class="ref-link">Ref: GitHub: "negative sampling" word2vec numpy from scratch</a></li>
+                    <li><strong>Task:</strong> Code the forward and backward propagation steps for the embedding matrices using raw numpy arrays.<br>
+                    <a href="https://numpy.org/doc/stable/reference/routines.math.html" target="_blank" class="ref-link">Ref: numpy.org/doc/stable/reference/routines.math.html</a></li>
+                    <li><strong>Task:</strong> Implement the custom SGD optimization loop to update weights, linearly decaying the 0.025 learning rate.<br>
+                    <a href="https://github.com/search?q=word2vec+skip-gram+SGD+scratch+%22import+numpy%22&type=code" target="_blank" class="ref-link">Ref: GitHub: word2vec skip-gram SGD scratch</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>IMDB CNN Sentiment Analysis</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Design a Convolutional Neural Network (CNN) to classify the IMDB dataset reviews as positive or negative, achieving at least 85% accuracy on variable-length text.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Load the IMDB dataset directly from Keras and reserve 20% of the 25k training data for validation.<br>
+                    <a href="https://keras.io/api/datasets/imdb/" target="_blank" class="ref-link">Ref: keras.io/api/datasets/imdb/</a></li>
+                    <li><strong>Task:</strong> Pad or truncate the integer-mapped sequences to a fixed length of 500 words.<br>
+                    <a href="https://keras.io/api/data_loading/timeseries/#pad_sequences-function" target="_blank" class="ref-link">Ref: keras.io/api/data_loading/timeseries/#pad_sequences-function</a></li>
+                    <li><strong>Task:</strong> Build the model starting with a 100-dimensional Embedding layer.<br>
+                    <a href="https://keras.io/api/layers/core_layers/embedding/" target="_blank" class="ref-link">Ref: keras.io/api/layers/core_layers/embedding/</a></li>
+                    <li><strong>Task:</strong> Apply 1D convolutions using 128 filters with multiple sizes (3, 4, 5) and ReLU activation to capture n-grams.<br>
+                    <a href="https://keras.io/api/layers/convolution_layers/conv1d/" target="_blank" class="ref-link">Ref: keras.io/api/layers/convolution_layers/conv1d/</a></li>
+                    <li><strong>Task:</strong> Aggregate features using Global Max-Pooling, apply 0.5 dropout, and output through a dense layer with a sigmoid activation for binary classification.<br>
+                    <a href="https://keras.io/api/layers/pooling_layers/global_max_pooling1d/" target="_blank" class="ref-link">Ref: keras.io/api/layers/pooling_layers/global_max_pooling1d/</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Bidirectional LSTM NER</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Implement a Bidirectional LSTM Named Entity Recognition (NER) model using the CoNLL-2003 dataset to classify words into nine entity categories with an 85% F1-score.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Load the dataset and extract POS tags and entity labels alongside the tokenized sentences.<br>
+                    <a href="https://huggingface.co/datasets/conll2003" target="_blank" class="ref-link">Ref: huggingface.co/datasets/conll2003</a></li>
+                    <li><strong>Task:</strong> Map words and entity labels to integers, adding &lt;PAD&gt; and &lt;UNK&gt; tokens, and pad to 100 tokens.<br>
+                    <a href="https://keras.io/examples/nlp/ner_transformers" target="_blank" class="ref-link">Ref: keras.io/examples/nlp/ner_transformers</a></li>
+                    <li><strong>Task:</strong> Construct a 100-dimensional Embedding layer followed by 1-2 Bidirectional LSTM layers with 128 units.<br>
+                    <a href="https://keras.io/api/layers/recurrent_layers/bidirectional/" target="_blank" class="ref-link">Ref: keras.io/api/layers/recurrent_layers/bidirectional/</a></li>
+                    <li><strong>Task:</strong> Apply a TimeDistributed dense layer with a softmax activation to output predictions for every single token in the sequence.<br>
+                    <a href="https://keras.io/api/layers/reshaping_layers/time_distributed/" target="_blank" class="ref-link">Ref: keras.io/api/layers/reshaping_layers/time_distributed/</a></li>
+                    <li><strong>Task:</strong> Compile with SparseCategoricalCrossentropy and evaluate per-token accuracy and entity-level F1-score using the seqeval library.<br>
+                    <a href="https://pypi.org/project/seqeval/" target="_blank" class="ref-link">Ref: pypi.org/project/seqeval/</a></li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Abstractive Summarization via Seq2Seq</summary>
+                <p style="padding: 0 15px;"><strong>Problem Statement:</strong> Design an abstractive text summarization system for the CNN/DailyMail dataset using a deep learning sequence-to-sequence (seq2seq) model with attention, targeting a ROUGE-1 score of 0.35.</p>
+                <ul class="implementation-list">
+                    <li><strong>Task:</strong> Clean the text, split into articles and highlights, and build target/input vocabularies containing &lt;PAD&gt;, &lt;UNK&gt;, &lt;SOS&gt;, and &lt;EOS&gt;.<br>
+                    <a href="https://keras.io/examples/nlp/lstm_seq2seq" target="_blank" class="ref-link">Ref: keras.io/examples/nlp/lstm_seq2seq</a></li>
+                    <li><strong>Task:</strong> Truncate and pad the input sequences to 400 tokens and the target summaries to 100 tokens.<br>
+                    <a href="https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences" target="_blank" class="ref-link">Ref: tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences</a></li>
+                    <li><strong>Task:</strong> Build the Encoder with a 256D embedding layer and a 300-unit Bidirectional LSTM/GRU to process the articles.<br>
+                    <a href="https://keras.io/api/layers/recurrent_layers/lstm/" target="_blank" class="ref-link">Ref: keras.io/api/layers/recurrent_layers/lstm/</a></li>
+                    <li><strong>Task:</strong> Construct the Decoder using an LSTM/GRU, integrated with a Bahdanau attention mechanism and a Time-distributed dense layer.<br>
+                    <a href="https://keras.io/examples/nlp/neural_machine_translation_with_attention" target="_blank" class="ref-link">Ref: keras.io/examples/nlp/neural_machine_translation_with_attention</a></li>
+                    <li><strong>Task:</strong> Implement a decoding loop utilizing Teacher Forcing during training and Beam Search (width 3-5) during inference.<br>
+                    <a href="https://github.com/search?q=beam+search+seq2seq+keras&type=code" target="_blank" class="ref-link">Ref: GitHub: beam search seq2seq keras</a></li>
+                </ul>
+            </details>
+
         </div>
-
-        <hr>
-
-        <h2 id="implementation-notes">Implementation Notes</h2>
-        <p class="doc-text">Reference operational procedures and execution dependencies for environment configuration.</p>
-
-        <h4>Electronics Retailer Sentiment Analysis</h4>
-        <p><strong>Problem Statement:</strong> Process an electronics retailer's customer reviews dataset to determine overall sentiment, identify frequently mentioned product features, detect key entities (brands, models), and surface common complaints and praises.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Handle missing values in reviews.text and reviews.rating.<br>
-            <span class="ref-link">Ref: pandas.pydata.org/docs/reference/api/pandas.DataFrame.dropna.html</span></li>
-            <li><strong>Task:</strong> Extract models from product names using regex patterns for number sequences or model codes.<br>
-            <span class="ref-link">Ref: docs.python.org/3/library/re.html</span></li>
-            <li><strong>Task:</strong> Update the VADER lexicon with domain-specific electronics terminology like "responsive" or "glitchy".<br>
-            <span class="ref-link">Ref: Search site:stackoverflow.com nltk vader update lexicon SentimentIntensityAnalyzer</span></li>
-            <li><strong>Task:</strong> Split review sentences on conjunctions like "but" or "however" to isolate aspect-based sentiments.<br>
-            <span class="ref-link">Ref: Search site:stackoverflow.com python regex split string by multiple delimiters</span></li>
-            <li><strong>Task:</strong> Compare VADER's calculated sentiment against the ground truth of the 1-5 star ratings.<br>
-            <span class="ref-link">Ref: pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html</span></li>
-        </ul>
-
-        <h4>Newsgroups Text Representation Pipeline</h4>
-        <p><strong>Problem Statement:</strong> Develop a pipeline to preprocess 20 Newsgroups text data, generate Bag-of-Words (BOW) and Latent Dirichlet Allocation (LDA) feature representations, and evaluate their impact on classifier performance.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Clean the text data by lowercasing, removing stop words, and applying lemmatization.<br>
-            <span class="ref-link">Ref: scikit-learn.org/stable/modules/feature_extraction.html#stop-words</span></li>
-            <li><strong>Task:</strong> Generate the BOW representation using CountVectorizer limited to the top 1,000 most frequent terms, followed by TfidfTransformer.<br>
-            <span class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html</span></li>
-            <li><strong>Task:</strong> Train an LDA model on the training set to derive 10-dimensional topic probability distributions.<br>
-            <span class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.decomposition.LatentDirichletAllocation.html</span></li>
-            <li><strong>Task:</strong> Train Logistic Regression and Naive Bayes classifiers using both the TF-IDF features and the LDA distributions.<br>
-            <span class="ref-link">Ref: scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html</span></li>
-            <li><strong>Task:</strong> Evaluate both models using accuracy, F1-score, and a confusion matrix to compare the representations.<br>
-            <span class="ref-link">Ref: scikit-learn.org/stable/modules/model_evaluation.html</span></li>
-        </ul>
-
-        <h4>Product Review Sentiment Classification</h4>
-        <p><strong>Problem Statement:</strong> Design a word-embedding-based text classification system using the NLTK product_reviews_1 corpus to automatically predict review sentiment.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Assign numerical labels (0, 1, 2) to sentiment classes and convert them into one-hot encoded vectors.<br>
-            <span class="ref-link">Ref: keras.io/api/utils/python_utils/#to_categorical-function</span></li>
-            <li><strong>Task:</strong> Tokenize the text with a vocabulary size of 10,000, introduce an &lt;OOV&gt; token, and convert sentences to integer sequences.<br>
-            <span class="ref-link">Ref: keras.io/api/data_loading/text/</span></li>
-            <li><strong>Task:</strong> Apply sequence padding to enforce a uniform length of 100 tokens across all inputs.<br>
-            <span class="ref-link">Ref: www.tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences</span></li>
-            <li><strong>Task:</strong> Construct a sequential model starting with a 128-dimensional Embedding layer, followed by a Global Average Pooling layer.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/pooling_layers/global_average_pooling1d/</span></li>
-            <li><strong>Task:</strong> Add Dense layers with ReLU and Dropout, finishing with a Softmax output layer for the multi-class probabilities.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/core_layers/dense/</span></li>
-        </ul>
-
-        <h4>Word2Vec Skip-Gram Implementation</h4>
-        <p><strong>Problem Statement:</strong> Implement the Skip-Gram variant of the Word2Vec algorithm strictly from scratch using Stochastic Gradient Descent (SGD) to generate 300-dimensional embeddings from the Text8 corpus.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Preprocess the cleaned English text by implementing a subsampling function to discard frequent words exceeding a 1e-5 threshold.<br>
-            <span class="ref-link">Ref: docs.python.org/3/library/collections.html#collections.Counter</span></li>
-            <li><strong>Task:</strong> Generate target-context word pairs using a dynamic context window size of ±5 words.<br>
-            <span class="ref-link">Ref: Search site:github.com "skip-gram" "dynamic window" numpy language:python</span></li>
-            <li><strong>Task:</strong> Implement the negative sampling distribution to draw 5-20 negative samples per positive target pair efficiently.<br>
-            <span class="ref-link">Ref: Search site:github.com "negative sampling" word2vec numpy from scratch</span></li>
-            <li><strong>Task:</strong> Code the forward and backward propagation steps for the embedding matrices using raw numpy arrays.<br>
-            <span class="ref-link">Ref: numpy.org/doc/stable/reference/routines.math.html</span></li>
-            <li><strong>Task:</strong> Implement the custom SGD optimization loop to update weights, linearly decaying the 0.025 learning rate.<br>
-            <span class="ref-link">Ref: Search site:github.com word2vec skip-gram SGD scratch "import numpy"</span></li>
-        </ul>
-
-        <h4>IMDB CNN Sentiment Analysis</h4>
-        <p><strong>Problem Statement:</strong> Design a Convolutional Neural Network (CNN) to classify the IMDB dataset reviews as positive or negative, achieving at least 85% accuracy on variable-length text.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Load the IMDB dataset directly from Keras and reserve 20% of the 25k training data for validation.<br>
-            <span class="ref-link">Ref: keras.io/api/datasets/imdb/</span></li>
-            <li><strong>Task:</strong> Pad or truncate the integer-mapped sequences to a fixed length of 500 words.<br>
-            <span class="ref-link">Ref: keras.io/api/data_loading/timeseries/#pad_sequences-function</span></li>
-            <li><strong>Task:</strong> Build the model starting with a 100-dimensional Embedding layer.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/core_layers/embedding/</span></li>
-            <li><strong>Task:</strong> Apply 1D convolutions using 128 filters with multiple sizes (3, 4, 5) and ReLU activation to capture n-grams.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/convolution_layers/conv1d/</span></li>
-            <li><strong>Task:</strong> Aggregate features using Global Max-Pooling, apply 0.5 dropout, and output through a dense layer with a sigmoid activation for binary classification.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/pooling_layers/global_max_pooling1d/</span></li>
-        </ul>
-
-        <h4>Bidirectional LSTM NER</h4>
-        <p><strong>Problem Statement:</strong> Implement a Bidirectional LSTM Named Entity Recognition (NER) model using the CoNLL-2003 dataset to classify words into nine entity categories with an 85% F1-score.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Load the dataset and extract POS tags and entity labels alongside the tokenized sentences.<br>
-            <span class="ref-link">Ref: huggingface.co/datasets/conll2003</span></li>
-            <li><strong>Task:</strong> Map words and entity labels to integers, adding &lt;PAD&gt; and &lt;UNK&gt; tokens, and pad to 100 tokens.<br>
-            <span class="ref-link">Ref: Search site:keras.io/examples/ nlp/ner_transformers</span></li>
-            <li><strong>Task:</strong> Construct a 100-dimensional Embedding layer followed by 1-2 Bidirectional LSTM layers with 128 units.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/recurrent_layers/bidirectional/</span></li>
-            <li><strong>Task:</strong> Apply a TimeDistributed dense layer with a softmax activation to output predictions for every single token in the sequence.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/reshaping_layers/time_distributed/</span></li>
-            <li><strong>Task:</strong> Compile with SparseCategoricalCrossentropy and evaluate per-token accuracy and entity-level F1-score using the seqeval library.<br>
-            <span class="ref-link">Ref: pypi.org/project/seqeval/</span></li>
-        </ul>
-
-        <h4>Abstractive Summarization via Seq2Seq</h4>
-        <p><strong>Problem Statement:</strong> Design an abstractive text summarization system for the CNN/DailyMail dataset using a deep learning sequence-to-sequence (seq2seq) model with attention, targeting a ROUGE-1 score of 0.35.</p>
-        <ul class="implementation-list">
-            <li><strong>Task:</strong> Clean the text, split into articles and highlights, and build target/input vocabularies containing &lt;PAD&gt;, &lt;UNK&gt;, &lt;SOS&gt;, and &lt;EOS&gt;.<br>
-            <span class="ref-link">Ref: Search site:keras.io/examples/ nlp/lstm_seq2seq</span></li>
-            <li><strong>Task:</strong> Truncate and pad the input sequences to 400 tokens and the target summaries to 100 tokens.<br>
-            <span class="ref-link">Ref: www.tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences</span></li>
-            <li><strong>Task:</strong> Build the Encoder with a 256D embedding layer and a 300-unit Bidirectional LSTM/GRU to process the articles.<br>
-            <span class="ref-link">Ref: keras.io/api/layers/recurrent_layers/lstm/</span></li>
-            <li><strong>Task:</strong> Construct the Decoder using an LSTM/GRU, integrated with a Bahdanau attention mechanism and a Time-distributed dense layer.<br>
-            <span class="ref-link">Ref: Search site:keras.io/examples/ nlp/neural_machine_translation_with_attention</span></li>
-            <li><strong>Task:</strong> Implement a decoding loop utilizing Teacher Forcing during training and Beam Search (width 3-5) during inference.<br>
-            <span class="ref-link">Ref: Search site:github.com beam search seq2seq keras</span></li>
-        </ul>
-
     </div>
 
     <script>
+        // Sidebar Toggle Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('expanded');
+        }
+
+        // Copy Code Logic
         function copyText(button) {
             const preElement = button.nextElementSibling;
             const codeText = preElement.innerText;
@@ -415,8 +553,10 @@ def build_bow_lda_pipeline(num_topics=10):
             navigator.clipboard.writeText(codeText).then(() => {
                 const originalText = button.innerText;
                 button.innerText = 'Copied!';
+                button.style.backgroundColor = '#e6f3e6';
                 setTimeout(() => {
                     button.innerText = originalText;
+                    button.style.backgroundColor = '#ffffff';
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
