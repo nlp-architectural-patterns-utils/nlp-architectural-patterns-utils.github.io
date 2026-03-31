@@ -578,6 +578,7 @@ def build_bow_lda_pipeline(num_topics=10):
     </script>
     <div id="legacy-deep-archive" style="display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%; background: #ffffff; z-index: 9999; border: 3px solid #005083; box-shadow: 0 0 50px rgba(0,0,0,0.5); overflow-y: auto; padding: 30px; border-radius: 8px;">
         <button onclick="document.getElementById('legacy-deep-archive').style.display='none'" style="position: absolute; top: 20px; right: 30px; padding: 5px 15px; cursor: pointer; background: #eee; border: 1px solid #ccc;">Close</button>
+        <h2 style="color: #d9534f; border-bottom: 2px solid #d9534f; margin-top: 0;">RESTRICTED: LEGACY IMPLEMENTATION ARCHIVE</h2>
 
         <h3 style="margin-top: 30px;">Ex 1: Domain-Specific VADER (Electronics)</h3>
         <div class="code-container">
@@ -588,14 +589,18 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
 nltk.download('vader_lexicon')
 
-# Load and clean data
+# Load and handle missing values
 df = pd.read_csv('reviews.csv')
-df = df.dropna(subset=['reviews.text', 'reviews.rating']) [cite: 184]
+df = df.dropna(subset=['reviews.text', 'reviews.rating'])
+
+# Preprocessing: Extract categories/models
+# Assuming 'name' column exists for product names
+df['extracted_model'] = df['name'].str.extract(r'([A-Za-z]+ \d+[A-Za-z]*)')
 
 # Custom VADER Setup
 sia = SentimentIntensityAnalyzer()
-custom_lexicon = {'responsive': 2.0, 'seamless': 2.0, 'glitchy': -2.0, 'laggy': -2.0, 'overheats': -3.0} [cite: 196, 197]
-sia.lexicon.update(custom_lexicon) [cite: 198]
+custom_lexicon = {'responsive': 2.0, 'seamless': 2.0, 'glitchy': -2.0, 'laggy': -2.0, 'overheats': -3.0}
+sia.lexicon.update(custom_lexicon)
 
 def get_vader_sentiment(text):
     score = sia.polarity_scores(str(text))['compound']
@@ -603,58 +608,58 @@ def get_vader_sentiment(text):
     elif score <= -0.05: return 'Negative'
     else: return 'Neutral'
 
-def get_rating_sentiment(rating):
-    if rating >= 4: return 'Positive' [cite: 190]
-    elif rating <= 2: return 'Negative' [cite: 192]
-    else: return 'Neutral' [cite: 191]
-
 df['vader_sentiment'] = df['reviews.text'].apply(get_vader_sentiment)
-df['ground_truth'] = df['reviews.rating'].apply(get_rating_sentiment)
 
-# Aspect splitting example
-sample_review = "Battery lasts all day, but the screen is too dim" [cite: 218]
+# Sentence Splitting on Conjunctions for Aspect mining
+sample_review = "Battery lasts all day, but the screen is too dim"
 aspects = re.split(r'\s+but\s+|\s+however\s+', sample_review.lower())
 print(f"Aspect 1: {sia.polarity_scores(aspects[0])['compound']} -> {aspects[0]}")
 print(f"Aspect 2: {sia.polarity_scores(aspects[1])['compound']} -> {aspects[1]}")</code></pre>
         </div>
 
-        <h3>Ex 2: BOW vs LDA on 20 Newsgroups</h3>
+        <h3>Ex 2: BOW vs LDA Preprocessing</h3>
         <div class="code-container">
             <button class="copy-btn" onclick="copyText(this)">Copy</button>
             <pre><code>from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
+import nltk
+from nltk.stem import WordNetLemmatizer
+nltk.download('wordnet')
 
 # Load Data
 newsgroups_train = fetch_20newsgroups(subset='train', remove=('headers', 'footers', 'quotes'))
 newsgroups_test = fetch_20newsgroups(subset='test', remove=('headers', 'footers', 'quotes'))
 
-# BOW + TF-IDF Model
+# Preprocessing: Lemmatization wrapper for Vectorizer
+lemmatizer = WordNetLemmatizer()
+class LemmaCountVectorizer(CountVectorizer):
+    def build_analyzer(self):
+        analyzer = super(LemmaCountVectorizer, self).build_analyzer()
+        return lambda doc: (lemmatizer.lemmatize(w) for w in analyzer(doc))
+
+# BOW + TF-IDF Model Pipeline
 bow_pipeline = Pipeline([
-    ('vect', CountVectorizer(max_features=1000, stop_words='english')), [cite: 162]
+    ('vect', LemmaCountVectorizer(max_features=1000, stop_words='english')),
     ('tfidf', TfidfTransformer()),
     ('clf', LogisticRegression(max_iter=1000))
 ])
 bow_pipeline.fit(newsgroups_train.data, newsgroups_train.target)
-bow_preds = bow_pipeline.predict(newsgroups_test.data)
-print("BOW Accuracy:", accuracy_score(newsgroups_test.target, bow_preds))
+print("BOW Accuracy:", accuracy_score(newsgroups_test.target, bow_pipeline.predict(newsgroups_test.data)))
 
-# LDA Model
+# LDA Model Pipeline
 lda_pipeline = Pipeline([
-    ('vect', CountVectorizer(max_features=1000, stop_words='english')),
-    ('lda', LatentDirichletAllocation(n_components=10, random_state=42)), [cite: 166]
+    ('vect', LemmaCountVectorizer(max_features=1000, stop_words='english')),
+    ('lda', LatentDirichletAllocation(n_components=10, random_state=42)),
     ('clf', LogisticRegression(max_iter=1000))
 ])
-lda_pipeline.fit(newsgroups_train.data, newsgroups_train.target)
-lda_preds = lda_pipeline.predict(newsgroups_test.data)
-print("LDA Accuracy:", accuracy_score(newsgroups_test.target, lda_preds))
-print("LDA F1:", f1_score(newsgroups_test.target, lda_preds, average='macro')) [cite: 170]</code></pre>
+lda_pipeline.fit(newsgroups_train.data, newsgroups_train.target)</code></pre>
         </div>
 
-        <h3>Ex 3: Dense Embedding Sentiment Classifier</h3>
+        <h3>Ex 3: NLTK Product Reviews Preprocessing</h3>
         <div class="code-container">
             <button class="copy-btn" onclick="copyText(this)">Copy</button>
             <pre><code>import tensorflow as tf
@@ -663,165 +668,142 @@ from tensorflow.keras.layers import Embedding, GlobalAveragePooling1D, Dense, Dr
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 import nltk
-from nltk.corpus import product_reviews_1 [cite: 120]
+from nltk.corpus import product_reviews_1
 
-# Pseudo-code for loading NLTK corpus (extract sentences and labels)
-# Assume texts = list of strings, labels = list of 0, 1, 2
-texts = ["great product", "terrible waste of money", "it is okay"]
-labels = [0, 1, 2]
+nltk.download('product_reviews_1')
 
-# Tokenize and Pad
-vocab_size = 10000 [cite: 126]
-max_len = 100 [cite: 127]
-tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>") [cite: 128]
+# Preprocessing: Extracting from NLTK Corpus
+texts = []
+labels = []
+# NLTK product_reviews structure is nested. Flattening it:
+for review in product_reviews_1.reviews():
+    for sentence in review.sents():
+        texts.append(" ".join(sentence))
+        # Note: True mapping requires parsing review.features(). 
+        # Dummy filling labels here for architecture testing.
+        labels.append(1) 
+
+vocab_size = 10000
+max_len = 100
+
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
 tokenizer.fit_on_texts(texts)
 seqs = tokenizer.texts_to_sequences(texts)
-X = pad_sequences(seqs, maxlen=max_len, padding='post', truncating='post')
-y = tf.keras.utils.to_categorical(labels, num_classes=3) [cite: 124]
 
-# Model
+# Pad sequences and One-hot encode labels
+X = pad_sequences(seqs, maxlen=max_len, padding='post', truncating='post')
+y = tf.keras.utils.to_categorical(labels, num_classes=3)
+
 model = Sequential([
-    Embedding(input_dim=vocab_size, output_dim=128, input_length=max_len), [cite: 131]
-    GlobalAveragePooling1D(), [cite: 132]
+    Embedding(input_dim=vocab_size, output_dim=128, input_length=max_len),
+    GlobalAveragePooling1D(),
     Dropout(0.3),
-    Dense(64, activation='relu'), [cite: 133]
-    Dense(3, activation='softmax') [cite: 134]
+    Dense(64, activation='relu'),
+    Dense(3, activation='softmax')
 ])
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy']) [cite: 138]
-# model.fit(X_train, y_train, batch_size=32, epochs=30, validation_split=0.2)</code></pre>
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])</code></pre>
         </div>
 
-        <h3>Ex 4: Word2Vec Skip-Gram (Negative Sampling)</h3>
+        <h3>Ex 4: Word2Vec Subsampling & Prep</h3>
         <div class="code-container">
             <button class="copy-btn" onclick="copyText(this)">Copy</button>
             <pre><code>import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Embedding, Dot, Reshape, Dense
+from collections import Counter
 from tensorflow.keras.preprocessing.sequence import skipgrams, make_sampling_table
+from tensorflow.keras.preprocessing.text import Tokenizer
 
-# Setup parameters
+# Mocking text8 load (Normally use gensim.downloader or read raw file)
+raw_text = "this is a massive corpus of text that needs to be subsampled"
+words = raw_text.split()
+
+# Preprocessing: Subsampling
 vocab_size = 10000
-embed_dim = 300 [cite: 103]
-window_size = 5 [cite: 104]
-num_ns = 5 # Negative samples [cite: 101]
+word_counts = Counter(words)
+total_words = sum(word_counts.values())
+freqs = {word: count/total_words for word, count in word_counts.items()}
+threshold = 1e-5
+# Probability of keeping a word
+p_drop = {word: 1 - np.sqrt(threshold / freqs[word]) for word in word_counts}
 
-# Assume 'sequence' is a list of integer-encoded words from Text8
-sequence = [1, 5, 2, 8, 3, 9, 12] # Dummy data
+tokenizer = Tokenizer(num_words=vocab_size)
+tokenizer.fit_on_texts([raw_text])
+sequence = tokenizer.texts_to_sequences([raw_text])[0]
 
-# Generate skip-gram pairs with negative sampling
-sampling_table = make_sampling_table(vocab_size, sampling_factor=1e-5) [cite: 105]
-pairs, labels = skipgrams(sequence, vocabulary_size=vocab_size, window_size=window_size, negative_samples=num_ns, sampling_table=sampling_table)
-
-target_word = Input(shape=(1,))
-context_word = Input(shape=(1,))
-
-target_emb = Embedding(vocab_size, embed_dim, input_length=1)(target_word)
-context_emb = Embedding(vocab_size, embed_dim, input_length=1)(context_word)
-
-dot_product = Dot(axes=2)([target_emb, context_emb])
-dot_product = Reshape((1,))(dot_product)
-output = Dense(1, activation='sigmoid')(dot_product)
-
-model = Model(inputs=[target_word, context_word], outputs=output)
-model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.025), loss='binary_crossentropy') [cite: 106, 107]
-
-# target_arr = np.array([p[0] for p in pairs])
-# context_arr = np.array([p[1] for p in pairs])
-# labels_arr = np.array(labels)
-# model.fit([target_arr, context_arr], labels_arr, epochs=5)</code></pre>
+# Generate skip-gram pairs
+sampling_table = make_sampling_table(vocab_size, sampling_factor=1e-5)
+pairs, labels = skipgrams(sequence, vocabulary_size=vocab_size, window_size=5, negative_samples=5, sampling_table=sampling_table)
+# Feed target_arr and context_arr to Dot product model</code></pre>
         </div>
 
-        <h3>Ex 5: IMDB CNN Classifier</h3>
+        <h3>Ex 6: CoNLL-2003 NER HuggingFace Prep</h3>
         <div class="code-container">
             <button class="copy-btn" onclick="copyText(this)">Copy</button>
             <pre><code>import tensorflow as tf
-from tensorflow.keras.datasets import imdb [cite: 66]
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout
+from datasets import load_dataset
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
 
-max_features = 10000
-max_len = 500 [cite: 69]
-
-(X_train, y_train), (X_test, y_test) = imdb.load_data(num_words=max_features)
-X_train = pad_sequences(X_train, maxlen=max_len)
-X_test = pad_sequences(X_test, maxlen=max_len)
-
-model = Sequential([
-    Embedding(max_features, 100, input_length=max_len), [cite: 72]
-    # Using a single filter size here for simplicity. 
-    # To use 3,4,5 simultaneously requires Functional API and Concatenation.
-    Conv1D(filters=128, kernel_size=3, activation='relu'), [cite: 74, 75]
-    GlobalMaxPooling1D(), [cite: 76]
-    Dropout(0.5), [cite: 77]
-    Dense(128, activation='relu'), [cite: 79]
-    Dense(1, activation='sigmoid') [cite: 80]
-])
-
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy']) [cite: 83, 84]
-# model.fit(X_train, y_train, batch_size=64, epochs=10, validation_split=0.2) [cite: 87, 88]</code></pre>
-        </div>
-
-        <h3>Ex 6: CoNLL-2003 Bi-LSTM NER</h3>
-        <div class="code-container">
-            <button class="copy-btn" onclick="copyText(this)">Copy</button>
-            <pre><code>import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, TimeDistributed, Dense
+# Load dataset via Hugging Face
+dataset = load_dataset("conll2003")
+train_tokens = dataset['train']['tokens']
+train_tags = dataset['train']['ner_tags']
 
 vocab_size = 20000 
-max_len = 100 [cite: 40]
-num_classes = 10 # 9 entity classes + 1 padding class [cite: 33]
+max_len = 100
 
-model = Sequential([
-    Embedding(input_dim=vocab_size, output_dim=100, input_length=max_len), [cite: 42]
-    Bidirectional(LSTM(128, return_sequences=True)), [cite: 43]
-    TimeDistributed(Dense(num_classes, activation='softmax')) [cite: 44]
-])
+# Preprocessing: String tokens to Integers
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<UNK>")
+# Keras Tokenizer expects strings, not lists of strings.
+flat_sentences = [" ".join(tokens) for tokens in train_tokens]
+tokenizer.fit_on_texts(flat_sentences)
+X_seqs = tokenizer.texts_to_sequences(flat_sentences)
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy', metrics=['accuracy']) [cite: 47]
-# model.fit(X_train, y_train, batch_size=32, epochs=10, validation_split=0.2) [cite: 50, 51]
-# Note: Evaluate using seqeval library on true/pred integer sequences [cite: 54]</code></pre>
+# Padding inputs and labels
+# Class 9 is 'O' or outside/padding in CoNLL
+X_train = pad_sequences(X_seqs, maxlen=max_len, padding='post', truncating='post')
+y_train = pad_sequences(train_tags, maxlen=max_len, padding='post', truncating='post', value=9)
+
+# Expand dims for SparseCategoricalCrossentropy TimeDistributed dense output
+y_train = np.expand_dims(y_train, -1)</code></pre>
         </div>
 
-        <h3>Ex 7: CNN/DailyMail Seq2Seq Summarization</h3>
+        <h3>Ex 7: CNN/DailyMail Seq2Seq Prep</h3>
         <div class="code-container">
             <button class="copy-btn" onclick="copyText(this)">Copy</button>
             <pre><code>import tensorflow as tf
-from tensorflow.keras.layers import Input, Embedding, LSTM, Bidirectional, Dense, Attention, Concatenate, TimeDistributed
-from tensorflow.keras.models import Model
+from datasets import load_dataset
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+
+# Preprocessing: Load Dataset and inject Teacher Forcing tokens
+# Loading only 1% for memory feasibility in Colab/Local
+dataset = load_dataset("cnn_dailymail", "3.0.0", split="train[:1%]")
+articles = dataset['article']
+highlights = dataset['highlights']
+
+# Add <SOS> and <EOS> for decoder targets
+target_texts = ["<SOS> " + text + " <EOS>" for text in highlights]
 
 vocab_size = 20000
-max_len_in = 400 [cite: 8]
-max_len_out = 100 [cite: 8]
-latent_dim = 300 [cite: 13, 14]
+max_len_in = 400
+max_len_out = 100
 
-# Encoder
-encoder_inputs = Input(shape=(max_len_in,))
-enc_emb = Embedding(vocab_size, 256)(encoder_inputs) [cite: 12]
-encoder_bilstm = Bidirectional(LSTM(latent_dim, return_sequences=True, return_state=True)) [cite: 13]
-encoder_outputs, forward_h, forward_c, backward_h, backward_c = encoder_bilstm(enc_emb)
-state_h = Concatenate()([forward_h, backward_h])
-state_c = Concatenate()([forward_c, backward_c])
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<UNK>", filters='!"#$%&()*+,-./:;=?@[\\]^_`{|}~\t\n')
+tokenizer.fit_on_texts(articles + target_texts)
 
-# Decoder
-decoder_inputs = Input(shape=(max_len_out,))
-dec_emb = Embedding(vocab_size, 256)(decoder_inputs)
-decoder_lstm = LSTM(latent_dim * 2, return_sequences=True, return_state=True) [cite: 14]
-decoder_outputs, _, _ = decoder_lstm(dec_emb, initial_state=[state_h, state_c])
+# Encoder Input Prep
+encoder_seqs = tokenizer.texts_to_sequences(articles)
+encoder_input_data = pad_sequences(encoder_seqs, maxlen=max_len_in, padding='post', truncating='post')
 
-# Attention
-attention_layer = Attention()
-attention_out = attention_layer([decoder_outputs, encoder_outputs]) [cite: 14]
-decoder_concat_input = Concatenate(axis=-1)([decoder_outputs, attention_out])
+# Decoder Input Prep
+decoder_seqs = tokenizer.texts_to_sequences(target_texts)
+decoder_input_data = pad_sequences(decoder_seqs, maxlen=max_len_out, padding='post', truncating='post')
 
-decoder_dense = TimeDistributed(Dense(vocab_size, activation='softmax')) [cite: 15]
-decoder_outputs = decoder_dense(decoder_concat_input)
-
-model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy') [cite: 19]
-# model.fit([encoder_input_data, decoder_input_data], decoder_target_data, batch_size=32, epochs=10) [cite: 18, 20, 21]</code></pre>
+# Decoder Target Prep (Shifted by 1 timestep)
+decoder_target_data = pad_sequences([seq[1:] for seq in decoder_seqs], maxlen=max_len_out, padding='post', truncating='post')
+import numpy as np
+decoder_target_data = np.expand_dims(decoder_target_data, -1)</code></pre>
         </div>
     </div>
 
